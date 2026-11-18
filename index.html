@@ -235,7 +235,19 @@ inventoryBlocks.forEach((block,index)=>{
 });
 
 document.body.appendChild(inventoryBar);
+const placeButton = document.getElementById('place');
 
+placeButton.style.display = 'block';
+placeButton.style.position = 'fixed';
+placeButton.style.bottom = '90px';
+placeButton.style.right = '20px';
+placeButton.style.zIndex = '10000';
+placeButton.style.padding = '15px';
+placeButton.style.background = '#35a853';
+placeButton.style.color = 'white';
+placeButton.style.fontSize = '18px';
+placeButton.style.borderRadius = '10px';
+placeButton.textContent = 'POSER';
 const key=(x,y,z)=>`${x},${y},${z}`;
 
 function addBlock(x,y,z,type='grass'){
