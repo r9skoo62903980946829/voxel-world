@@ -531,7 +531,7 @@ function animate(){
  const dt=Math.min(clock.getDelta(),.04);
 
  update(dt);
-
+console.log('Blocs dans le monde :', blocks.size);
  renderer.render(scene,camera);
 
 }
