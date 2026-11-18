@@ -180,6 +180,62 @@ const mats = {
 
 const blocks = new Map();
 
+let selectedBlock = 'grass';
+
+const inventoryBar = document.createElement('div');
+
+inventoryBar.style.cssText = `
+  position:fixed;
+  bottom:18px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:6px;
+  padding:8px;
+  background:rgba(20,20,20,0.85);
+  border:2px solid #777;
+  border-radius:12px;
+  z-index:9999;
+`;
+
+const inventoryBlocks = [
+  {type:'grass', icon:'🌱'},
+  {type:'dirt', icon:'🟫'},
+  {type:'stone', icon:'🪨'},
+  {type:'wood', icon:'🪵'},
+  {type:'leaves', icon:'🌿'}
+];
+
+inventoryBlocks.forEach((block,index)=>{
+  const button = document.createElement('button');
+
+  button.textContent = block.icon;
+  button.style.cssText = `
+    width:48px;
+    height:48px;
+    font-size:25px;
+    border:2px solid white;
+    border-radius:8px;
+    background:${index===0?'#777':'#333'};
+    color:white;
+    touch-action:manipulation;
+  `;
+
+  button.addEventListener('click',()=>{
+    selectedBlock = block.type;
+
+    [...inventoryBar.children].forEach(b=>{
+      b.style.background='#333';
+    });
+
+    button.style.background='#777';
+  });
+
+  inventoryBar.appendChild(button);
+});
+
+document.body.appendChild(inventoryBar);
+
 const key=(x,y,z)=>`${x},${y},${z}`;
 
 function addBlock(x,y,z,type='grass'){
