@@ -94,16 +94,88 @@ const geo = new THREE.BoxGeometry(1,1,1);
 
 const mats = {
 
- grass:new THREE.MeshLambertMaterial({color:0x55aa35}),
+ 
+function makeTexture(type) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
 
- dirt:new THREE.MeshLambertMaterial({color:0x80502b}),
+  const palettes = {
+    grass: ['#4b9b35','#62ad3d','#397d2b','#78bd49'],
+    side: ['#79502d','#8b6035','#6b4428','#4b9632'],
+    dirt: ['#79502d','#91613a','#684326','#a07145'],
+    stone: ['#777777','#929292','#626262','#a5a5a5'],
+    wood: ['#80502b','#a66b38','#694020','#bd8548'],
+    leaves: ['#286b2d','#398a35','#4b9e3e','#1f5727']
+  };
 
- stone:new THREE.MeshLambertMaterial({color:0x888888}),
+  const colors = palettes[type] || palettes.dirt;
 
- wood:new THREE.MeshLambertMaterial({color:0x88552b}),
+  for (let y = 0; y < 64; y += 4) {
+    for (let x = 0; x < 64; x += 4) {
+      ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+      ctx.fillRect(x, y, 4, 4);
+    }
+  }
 
- leaves:new THREE.MeshLambertMaterial({color:0x23852c})
+  if (type === 'side') {
+    ctx.fillStyle = '#4b9632';
+    ctx.fillRect(0, 0, 64, 9);
+  }
 
+  if (type === 'wood') {
+    for (let x = 5; x < 64; x += 13) {
+      ctx.fillStyle = '#59371f';
+      ctx.fillRect(x, 0, 2, 64);
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.NearestFilter;
+  texture.colorSpace = THREE.SRGBColorSpace;
+
+  return texture;
+}
+
+const grassTop = new THREE.MeshLambertMaterial({
+  map: makeTexture('grass')
+});
+
+const grassSide = new THREE.MeshLambertMaterial({
+  map: makeTexture('side')
+});
+
+const dirtMat = new THREE.MeshLambertMaterial({
+  map: makeTexture('dirt')
+});
+
+const stoneMat = new THREE.MeshLambertMaterial({
+  map: makeTexture('stone')
+});
+
+const woodMat = new THREE.MeshLambertMaterial({
+  map: makeTexture('wood')
+});
+
+const leavesMat = new THREE.MeshLambertMaterial({
+  map: makeTexture('leaves')
+});
+
+const mats = {
+  grass: [
+    grassSide,
+    grassSide,
+    grassTop,
+    dirtMat,
+    grassSide,
+    grassSide
+  ],
+  dirt: dirtMat,
+  stone: stoneMat,
+  wood: woodMat,
+  leaves: leavesMat
 };
 
 const blocks = new Map();
