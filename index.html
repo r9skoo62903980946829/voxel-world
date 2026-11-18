@@ -248,6 +248,21 @@ placeButton.style.color = 'white';
 placeButton.style.fontSize = '18px';
 placeButton.style.borderRadius = '10px';
 placeButton.textContent = 'POSER';
+const breakButton = document.getElementById('break');
+const jumpButton = document.getElementById('jump');
+
+[breakButton, jumpButton].forEach(button => {
+  button.style.position = 'fixed';
+  button.style.right = '20px';
+  button.style.zIndex = '10000';
+  button.style.padding = '15px';
+  button.style.fontSize = '18px';
+  button.style.borderRadius = '10px';
+  button.style.color = 'white';
+});
+
+jumpButton.style.bottom = '175px';
+breakButton.style.bottom = '75px';
 const key=(x,y,z)=>`${x},${y},${z}`;
 
 function addBlock(x,y,z,type='grass'){
@@ -430,19 +445,7 @@ document.getElementById('jump').addEventListener('pointerdown',e=>{
 
 });
 
-const raycaster=new THREE.Raycaster();
 
-function targetBlock(){
-
- raycaster.setFromCamera(new THREE.Vector2(0,0),camera);
-
- const hits=raycaster.intersectObjects([...blocks.values()],false);
-
- return hits.find(h=>h.distance<6);
-
-}
-
-document.getElementById('break').addEventListener('pointerdown',e=>{
 
  e.preventDefault();
 
