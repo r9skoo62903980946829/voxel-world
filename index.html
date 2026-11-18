@@ -1,0 +1,411 @@
+
+
+<!DOCTYPE html>
+
+<html lang="fr">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<title>VOXEL WORLD</title>
+
+<style>
+
+*{box-sizing:border-box}
+
+body{margin:0;overflow:hidden;background:#87ceeb;font-family:Arial;color:white;touch-action:none}
+
+canvas{display:block}
+
+#title{position:absolute;top:12px;left:0;width:100%;text-align:center;font-size:22px;font-weight:bold;text-shadow:2px 2px #333;pointer-events:none}
+
+#cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:25px;pointer-events:none}
+
+#joy{position:absolute;bottom:30px;left:25px;width:125px;height:125px;border-radius:50%;background:#ffffff44;border:2px solid #fff9;touch-action:none}
+
+#stick{position:absolute;width:48px;height:48px;left:36px;top:36px;border-radius:50%;background:#ffffffbb}
+
+#buttons{position:absolute;right:18px;bottom:25px;display:flex;flex-direction:column;gap:12px}
+
+button{border:2px solid #ffffffaa;border-radius:14px;background:#263238cc;color:white;font-size:15px;font-weight:bold;padding:15px 18px;min-width:92px;touch-action:none}
+
+button:active{background:#4caf50}
+
+#hint{position:absolute;bottom:170px;left:10px;font-size:11px;text-shadow:1px 1px #333}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="title">VOXEL WORLD</div>
+
+<div id="cross">＋</div>
+
+<div id="joy"><div id="stick"></div></div>
+
+<div id="buttons">
+
+<button id="jump">SAUT</button>
+
+<button id="break">CASSER</button>
+
+<button id="place">POSER</button>
+
+</div>
+
+<div id="hint">Glisse à droite pour regarder</div>
+
+<script type="module">
+
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0x87ceeb);
+
+scene.fog = new THREE.Fog(0x87ceeb, 18, 48);
+
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 100);
+
+camera.rotation.order = 'YXZ';
+
+const renderer = new THREE.WebGLRenderer({antialias:false});
+
+renderer.setSize(innerWidth,innerHeight);
+
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x667755,2));
+
+const sun = new THREE.DirectionalLight(0xffffff,2);
+
+sun.position.set(10,20,8);
+
+scene.add(sun);
+
+const geo = new THREE.BoxGeometry(1,1,1);
+
+const mats = {
+
+ grass:new THREE.MeshLambertMaterial({color:0x55aa35}),
+
+ dirt:new THREE.MeshLambertMaterial({color:0x80502b}),
+
+ stone:new THREE.MeshLambertMaterial({color:0x888888}),
+
+ wood:new THREE.MeshLambertMaterial({color:0x88552b}),
+
+ leaves:new THREE.MeshLambertMaterial({color:0x23852c})
+
+};
+
+const blocks = new Map();
+
+const key=(x,y,z)=>`${x},${y},${z}`;
+
+function addBlock(x,y,z,type='grass'){
+
+ const k=key(x,y,z);
+
+ if(blocks.has(k)) return;
+
+ const mesh=new THREE.Mesh(geo,mats[type]||mats.grass);
+
+ mesh.position.set(x,y,z);
+
+ mesh.userData={x,y,z,type};
+
+ scene.add(mesh);
+
+ blocks.set(k,mesh);
+
+}
+
+function removeBlock(mesh){
+
+ const p=mesh.userData;
+
+ scene.remove(mesh);
+
+ blocks.delete(key(p.x,p.y,p.z));
+
+}
+
+function heightAt(x,z){
+
+ return Math.floor(1 + Math.sin(x*.32)*1.1 + Math.cos(z*.28)*.8);
+
+}
+
+for(let x=-13;x<=13;x++){
+
+ for(let z=-13;z<=13;z++){
+
+  const h=heightAt(x,z);
+
+  for(let y=-2;y<=h;y++){
+
+   addBlock(x,y,z,y===h?'grass':y>=h-2?'dirt':'stone');
+
+  }
+
+ }
+
+}
+
+// Quelques arbres
+
+for(let x=-10;x<=10;x+=5){
+
+ for(let z=-10;z<=10;z+=5){
+
+  if(Math.random()>.55) continue;
+
+  const h=heightAt(x,z);
+
+  for(let y=1;y<=3;y++) addBlock(x,h+y,z,'wood');
+
+  for(let dx=-2;dx<=2;dx++)
+
+   for(let dz=-2;dz<=2;dz++)
+
+    for(let dy=2;dy<=4;dy++)
+
+     if(Math.abs(dx)+Math.abs(dz)+(dy===4?1:0)<5)
+
+      addBlock(x+dx,h+dy,z+dz,'leaves');
+
+ }
+
+}
+
+let yaw=0,pitch=0,vy=0,onGround=false;
+
+const player={x:0,z:5,y:heightAt(0,5)+2};
+
+camera.position.set(player.x,player.y,player.z);
+
+let joyX=0,joyY=0;
+
+const joy=document.getElementById('joy');
+
+const stick=document.getElementById('stick');
+
+let joyPointer=null;
+
+joy.addEventListener('pointerdown',e=>{
+
+ joyPointer=e.pointerId;
+
+ joy.setPointerCapture(e.pointerId);
+
+ moveJoy(e);
+
+});
+
+joy.addEventListener('pointermove',e=>{
+
+ if(e.pointerId===joyPointer) moveJoy(e);
+
+});
+
+function moveJoy(e){
+
+ const r=joy.getBoundingClientRect();
+
+ const dx=e.clientX-(r.left+r.width/2);
+
+ const dy=e.clientY-(r.top+r.height/2);
+
+ const len=Math.max(1,Math.hypot(dx,dy));
+
+ const scale=Math.min(1,45/len);
+
+ joyX=dx/45*scale;
+
+ joyY=dy/45*scale;
+
+ stick.style.transform=`translate(${joyX*38}px,${joyY*38}px)`;
+
+}
+
+function resetJoy(){
+
+ joyPointer=null;joyX=0;joyY=0;
+
+ stick.style.transform='translate(0,0)';
+
+}
+
+joy.addEventListener('pointerup',resetJoy);
+
+joy.addEventListener('pointercancel',resetJoy);
+
+let lookPointer=null,lastX=0,lastY=0;
+
+renderer.domElement.addEventListener('pointerdown',e=>{
+
+ if(e.pointerType==='mouse' && e.button!==0) return;
+
+ lookPointer=e.pointerId;lastX=e.clientX;lastY=e.clientY;
+
+ renderer.domElement.setPointerCapture(e.pointerId);
+
+});
+
+renderer.domElement.addEventListener('pointermove',e=>{
+
+ if(e.pointerId!==lookPointer) return;
+
+ const dx=e.clientX-lastX,dy=e.clientY-lastY;
+
+ lastX=e.clientX;lastY=e.clientY;
+
+ yaw-=dx*.005;
+
+ pitch-=dy*.005;
+
+ pitch=Math.max(-1.45,Math.min(1.45,pitch));
+
+});
+
+function stopLook(e){if(e.pointerId===lookPointer)lookPointer=null}
+
+renderer.domElement.addEventListener('pointerup',stopLook);
+
+renderer.domElement.addEventListener('pointercancel',stopLook);
+
+document.getElementById('jump').addEventListener('pointerdown',e=>{
+
+ e.preventDefault();
+
+ if(onGround){vy=7;onGround=false;}
+
+});
+
+const raycaster=new THREE.Raycaster();
+
+function targetBlock(){
+
+ raycaster.setFromCamera(new THREE.Vector2(0,0),camera);
+
+ const hits=raycaster.intersectObjects([...blocks.values()],false);
+
+ return hits.find(h=>h.distance<6);
+
+}
+
+document.getElementById('break').addEventListener('pointerdown',e=>{
+
+ e.preventDefault();
+
+ const hit=targetBlock();
+
+ if(hit) removeBlock(hit.object);
+
+});
+
+document.getElementById('place').addEventListener('pointerdown',e=>{
+
+ e.preventDefault();
+
+ const hit=targetBlock();
+
+ if(!hit)return;
+
+ const p=hit.object.userData;
+
+ const n=hit.face.normal;
+
+ const x=p.x+Math.round(n.x);
+
+ const y=p.y+Math.round(n.y);
+
+ const z=p.z+Math.round(n.z);
+
+ if(Math.hypot(x-player.x,y-player.y,z-player.z)>1.5)
+
+  addBlock(x,y,z,'grass');
+
+});
+
+window.addEventListener('keydown',e=>{
+
+ if(e.code==='Space'&&onGround){vy=7;onGround=false;}
+
+});
+
+const keys={};
+
+window.addEventListener('keydown',e=>keys[e.code]=true);
+
+window.addEventListener('keyup',e=>keys[e.code]=false);
+
+function update(dt){
+
+ const forward=(joyY<-.15? -joyY:0)+(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0);
+
+ const side=joyX+(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);
+
+ const speed=5;
+
+ const fx=-Math.sin(yaw),fz=-Math.cos(yaw);
+
+ const rx=Math.cos(yaw),rz=-Math.sin(yaw);
+
+ player.x+=(fx*forward+rx*side)*speed*dt;
+
+ player.z+=(fz*forward+rz*side)*speed*dt;
+
+ vy-=18*dt;
+
+ player.y+=vy*dt;
+
+ const ground=heightAt(Math.round(player.x),Math.round(player.z))+1.9;
+
+ if(player.y<ground){player.y=ground;vy=0;onGround=true;}
+
+ camera.position.set(player.x,player.y,player.z);
+
+ camera.rotation.set(pitch,yaw,0);
+
+}
+
+const clock=new THREE.Clock();
+
+function animate(){
+
+ requestAnimationFrame(animate);
+
+ const dt=Math.min(clock.getDelta(),.04);
+
+ update(dt);
+
+ renderer.render(scene,camera);
+
+}
+
+animate();
+
+addEventListener('resize',()=>{
+
+ camera.aspect=innerWidth/innerHeight;
+
+ camera.updateProjectionMatrix();
+
+ renderer.setSize(innerWidth,innerHeight);
+
+});
+
+</script>
+
+</body>
+
+</html>
