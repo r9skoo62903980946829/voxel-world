@@ -1,0 +1,69 @@
+
+
+<!DOCTYPE html>
+
+<html lang="fr">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <meta name="theme-color" content="#78b9ed">
+
+  <meta name="description" content="VOXEL WORLD - Explore, construis et joue dans ton monde en blocs.">
+
+  <title>VOXEL WORLD</title>
+
+  <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+  <div id="game">
+
+    <div id="loading">Chargement de VOXEL WORLD...</div>
+
+  </div>
+
+  <div id="crosshair">+</div>
+
+  <div id="inventory">
+
+    <button class="block active" data-block="grass">🌱</button>
+
+    <button class="block" data-block="dirt">🟫</button>
+
+    <button class="block" data-block="stone">🪨</button>
+
+    <button class="block" data-block="wood">🪵</button>
+
+  </div>
+
+  <div id="controls">
+
+    <div id="joystick">
+
+      <div id="stick"></div>
+
+    </div>
+
+    <div id="actions">
+
+      <button id="jump">SAUT</button>
+
+      <button id="break">CASSER</button>
+
+      <button id="place">POSER</button>
+
+    </div>
+
+  </div>
+
+  <script type="module" src="script.js"></script>
+
+</body>
+
+</html>
